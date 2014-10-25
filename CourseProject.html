@@ -59,29 +59,20 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="TOC">
 <ul>
-<li><a href="#introduction">Introduction</a></li>
 <li><a href="#background">Background</a></li>
 <li><a href="#data">Data</a></li>
-<li><a href="#what-you-should-submit">What you should submit</a></li>
+<li><a href="#objective">Objective</a></li>
+<li><a href="#data-exploration">Data Exploration</a></li>
+<li><a href="#data-transformation">Data transformation</a></li>
+<li><a href="#prediction-models-and-variables">Prediction Models and Variables</a></li>
+<li><a href="#final-prediction-model">Final Prediction Model</a></li>
+<li><a href="#predictions">Predictions</a></li>
 </ul>
 </div>
 
-<div id="introduction" class="section level2">
-<h2>Introduction</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
-<pre class="r"><code>summary(cars)</code></pre>
-<pre><code>##      speed           dist    
-##  Min.   : 4.0   Min.   :  2  
-##  1st Qu.:12.0   1st Qu.: 26  
-##  Median :15.0   Median : 36  
-##  Mean   :15.4   Mean   : 43  
-##  3rd Qu.:19.0   3rd Qu.: 56  
-##  Max.   :25.0   Max.   :120</code></pre>
-</div>
 <div id="background" class="section level2">
 <h2>Background</h2>
-<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset).</p>
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset).</p>
 </div>
 <div id="data" class="section level2">
 <h2>Data</h2>
@@ -91,13 +82,277 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p><a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a></p>
 <p>The data for this project come from this source: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.</p>
 </div>
-<div id="what-you-should-submit" class="section level2">
-<h2>What you should submit</h2>
-<p>The goal of your project is to predict the manner in which they did the exercise. This is the “classe” variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.</p>
-<ol style="list-style-type: decimal">
-<li>Your submission should consist of a link to a Github repo with your R markdown and compiled HTML file describing your analysis. Please constrain the text of the writeup to &lt; 2000 words and the number of figures to be less than 5. It will make it easier for the graders if you submit a repo with a gh-pages branch so the HTML page can be viewed online (and you always want to make it easy on graders :-).</li>
-<li>You should also apply your machine learning algorithm to the 20 test cases available in the test data above. Please submit your predictions in appropriate format to the programming assignment for automated grading. See the programming assignment for additional details.</li>
-</ol>
+<div id="objective" class="section level2">
+<h2>Objective</h2>
+<p>The goal of this project is to predict the manner in which the exercises was done. This is the “classe” variable in the training set.</p>
+<p>This report describes how the model was built, how cross validation was used, what was the expected out of sample error and why we made the choices we did.</p>
+<p>We will use this prediction model to predict 20 different test cases contained in the test dataset.</p>
+</div>
+<div id="data-exploration" class="section level2">
+<h2>Data Exploration</h2>
+<p>The Following code will load the train and test data from local files downloaded from the links above:</p>
+<pre class="r"><code>File &lt;- &quot;/Users/Huascar/MachineLearning/data/pml-training.csv&quot;
+trainData &lt;- read.csv(File, stringsAsFactors = FALSE)
+
+File2 &lt;- &quot;/Users/Huascar/MachineLearning/data/pml-testing.csv&quot;
+testData &lt;- read.csv(File2, stringsAsFactors = FALSE)</code></pre>
+<p>We than reviewed the data, using the <code>View()</code> command in RStudio, and read the following document that explains how experiment was conducted and the data collected:</p>
+<p><a href="http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf">http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf</a></p>
+<p>Our conclusions and observations about this data:</p>
+<ul>
+<li><p>Each line contains measurements from the execution of the exercise <em>Unilateral Dumbbell Biceps Curl</em> for one time.</p></li>
+<li><p>The variable <code>num_window</code> identifies all measurements for one execution of the exercise.</p></li>
+<li><p>The end of the movement, and end of this measurements window, is identified by the line where the variable <code>new_window</code> is equal to <code>&quot;yes&quot;</code>.</p></li>
+<li>This line also contains a set of features calculated from the measuremnts, such as:
+<ul>
+<li>Maximum and Minimum</li>
+<li>Kurtosis and skewness</li>
+<li>Amplitude</li>
+<li>Average, Variance and standard deviation.</li>
+</ul></li>
+<li><p>These calculated features appear only in the lines where the variable <code>new_window</code> is equal to <code>&quot;yes&quot;</code>. The other lines contain blanks or zeros or NA.</p></li>
+<li><p>The <code>user_name</code> variable in the data contains the name of the person who performed the exercise measured.</p></li>
+<li><p>The data in the testing dataset do not contain such features either.</p></li>
+<li>Each repetition of the exercise was made in five different fashions:
+<ul>
+<li>Exactly according to the specification (Class A),</li>
+<li>Throwing the elbows to the front (Class B),</li>
+<li>Lifting the dumbbell only halfway (Class C),</li>
+<li>Lowering the dumbbell only halfway (Class D) and</li>
+<li>Throwing the hips to the front (Class E).</li>
+</ul></li>
+</ul>
+</div>
+<div id="data-transformation" class="section level2">
+<h2>Data transformation</h2>
+<p>From our conclusions above, we decided to perform the following transformations on the data:</p>
+<ul>
+<li><p>Remove all columns with calculated features which are not contained in the test dataset.</p></li>
+<li><p>Remove all columns that, in our understanding, are irrelevant to predicting how an exercise was conducted such as: <code>user_name</code>, timestamps, <code>new_window</code>.</p></li>
+</ul>
+<p>The following code was used to perform these transformations on both the training and testing data:</p>
+<pre class="r"><code>##Remove features (kurtosis, swewness, avg, max, etc) without data
+##Also remove user name, new window and timestamps columns
+removeCols &lt;- c(1:6, 12:36, 50:59, 69:83, 87:101, 103:112, 125:139, 141:150)
+trainData &lt;- trainData[,-removeCols]
+trainData$classe &lt;- as.factor(trainData$classe)
+testData &lt;- testData[,-removeCols]</code></pre>
+</div>
+<div id="prediction-models-and-variables" class="section level2">
+<h2>Prediction Models and Variables</h2>
+<p>In order to evaluate which prediction models should be used , we took a small sample (10%) of the train data and created a Random Forest model with the following code:</p>
+<pre class="r"><code>library(caret)
+set.seed(1234)
+inTrain&lt;- createDataPartition(y=trainData$classe, 
+                              p=0.1, 
+                              list=FALSE)
+myTrain &lt;- trainData[inTrain,]
+myTest &lt;- trainData[-inTrain,]
+fit &lt;- train(classe ~ ., 
+             method=&quot;rf&quot;, 
+             data = myTrain)
+fit</code></pre>
+<pre><code>## Random Forest 
+## 
+## 1964 samples
+##   53 predictor
+##    5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## 
+## Summary of sample sizes: 1964, 1964, 1964, 1964, 1964, 1964, ... 
+## 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy  Kappa  Accuracy SD  Kappa SD
+##    2    0.9       0.9    0.009        0.01    
+##   27    0.9       0.9    0.009        0.01    
+##   53    0.9       0.9    0.011        0.01    
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 27.</code></pre>
+<pre class="r"><code>confusionMatrix(predict(fit), myTrain$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   A   B   C   D   E
+##          A 558   0   0   0   0
+##          B   0 380   0   0   0
+##          C   0   0 343   0   0
+##          D   0   0   0 322   0
+##          E   0   0   0   0 361
+## 
+## Overall Statistics
+##                                     
+##                Accuracy : 1         
+##                  95% CI : (0.998, 1)
+##     No Information Rate : 0.284     
+##     P-Value [Acc &gt; NIR] : &lt;2e-16    
+##                                     
+##                   Kappa : 1         
+##  Mcnemar's Test P-Value : NA        
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             1.000    1.000    1.000    1.000    1.000
+## Specificity             1.000    1.000    1.000    1.000    1.000
+## Pos Pred Value          1.000    1.000    1.000    1.000    1.000
+## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
+## Prevalence              0.284    0.193    0.175    0.164    0.184
+## Detection Rate          0.284    0.193    0.175    0.164    0.184
+## Detection Prevalence    0.284    0.193    0.175    0.164    0.184
+## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000</code></pre>
+<p>We seem to have hit a very good model fit using the Random Forest model! Accuracy with the train data is perfect (overfitting?).</p>
+<p>Let’s see how this model, based on a small set of the data, performs against the rest of the data:</p>
+<pre class="r"><code>confusionMatrix(predict(fit, newdata=myTest), myTest$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 5008  157    0   10    8
+##          B    7 3148  106   21   30
+##          C    1   91 2941   61    5
+##          D    3   20   32 2788   20
+##          E    3    1    0   14 3183
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.967         
+##                  95% CI : (0.964, 0.969)
+##     No Information Rate : 0.284         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.958         
+##  Mcnemar's Test P-Value : &lt;2e-16        
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.997    0.921    0.955    0.963    0.981
+## Specificity             0.986    0.988    0.989    0.995    0.999
+## Pos Pred Value          0.966    0.950    0.949    0.974    0.994
+## Neg Pred Value          0.999    0.981    0.991    0.993    0.996
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.178    0.167    0.158    0.180
+## Detection Prevalence    0.294    0.188    0.176    0.162    0.181
+## Balanced Accuracy       0.992    0.955    0.972    0.979    0.990</code></pre>
+<p>We have a very good 97% accurary with the rest of the train data. So we can conclude that the Random Forest is the right model to use.</p>
+<p>Now let’s explore which variables should be used, applying the <code>varImp</code> function:</p>
+<pre class="r"><code>varImp(fit)</code></pre>
+<pre><code>## rf variable importance
+## 
+##   only 20 most important variables shown (out of 53)
+## 
+##                      Overall
+## num_window             100.0
+## roll_belt               97.1
+## pitch_forearm           72.2
+## magnet_dumbbell_z       49.7
+## yaw_belt                45.3
+## pitch_belt              41.0
+## magnet_dumbbell_y       40.0
+## roll_forearm            32.4
+## magnet_dumbbell_x       23.6
+## accel_dumbbell_y        23.2
+## roll_dumbbell           21.9
+## accel_forearm_x         17.5
+## magnet_belt_y           16.7
+## magnet_belt_z           14.9
+## accel_dumbbell_z        14.5
+## total_accel_dumbbell    13.3
+## gyros_dumbbell_y        12.3
+## accel_belt_z            11.5
+## magnet_belt_x           10.6
+## yaw_dumbbell            10.1</code></pre>
+<p>We can see that the <code>num_window</code> and <code>roll_belt</code> variables are the most important ones, so we will use only these variables to build another model.</p>
+</div>
+<div id="final-prediction-model" class="section level2">
+<h2>Final Prediction Model</h2>
+<p>A prediction model based on Random Forest and with the variables <code>num_window</code> and <code>roll_belt</code>, appears to be a good fit, since it will run faster on a larger dataset and it is also consistent with how the data was created.</p>
+<p>We will build this model, on a larger sample of the train data, using the following code:</p>
+<pre class="r"><code>set.seed(1234)
+inTrain&lt;- createDataPartition(y=trainData$classe, 
+                              p=0.70, 
+                              list=FALSE)
+myTrain &lt;- trainData[inTrain,]
+myTest &lt;- trainData[-inTrain,]
+finalModel &lt;- train(classe ~ num_window+roll_belt, 
+             method=&quot;rf&quot;, 
+             data = myTrain)</code></pre>
+<pre><code>## note: only 1 unique complexity parameters in default grid. Truncating the grid to 1 .</code></pre>
+<pre class="r"><code>finalModel</code></pre>
+<pre><code>## Random Forest 
+## 
+## 13737 samples
+##    53 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## 
+## Summary of sample sizes: 13737, 13737, 13737, 13737, 13737, 13737, ... 
+## 
+## Resampling results
+## 
+##   Accuracy  Kappa  Accuracy SD  Kappa SD
+##   1         1      5e-04        6e-04   
+## 
+## Tuning parameter 'mtry' was held constant at a value of 2
+## </code></pre>
+<pre class="r"><code>confusionMatrix(predict(finalModel, newdata=myTest), myTest$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1674    0    0    0    0
+##          B    0 1138    0    0    0
+##          C    0    0 1026    0    0
+##          D    0    0    0  964    1
+##          E    0    1    0    0 1081
+## 
+## Overall Statistics
+##                                     
+##                Accuracy : 1         
+##                  95% CI : (0.999, 1)
+##     No Information Rate : 0.284     
+##     P-Value [Acc &gt; NIR] : &lt;2e-16    
+##                                     
+##                   Kappa : 1         
+##  Mcnemar's Test P-Value : NA        
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             1.000    0.999    1.000    1.000    0.999
+## Specificity             1.000    1.000    1.000    1.000    1.000
+## Pos Pred Value          1.000    1.000    1.000    0.999    0.999
+## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.193    0.174    0.164    0.184
+## Detection Prevalence    0.284    0.193    0.174    0.164    0.184
+## Balanced Accuracy       1.000    1.000    1.000    1.000    0.999</code></pre>
+<p>With the variables <code>num_window</code> and <code>roll_belt</code>, our Random Forest model presented a 100% accurary on the sample of the training data reserved for testing, which gives us a very good confidence that we will be able to accuratly predict the <code>classe</code> variable of the testing data.</p>
+</div>
+<div id="predictions" class="section level2">
+<h2>Predictions</h2>
+<p>Let’s apply our model on the test data provided, and create the files to submmit the aswers:</p>
+<pre class="r"><code>##Apply predictions
+answers &lt;- predict(finalModel, newdata=testData)
+answers</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
+<pre class="r"><code>##Create submission files
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0(&quot;problem_id_&quot;,i,&quot;.txt&quot;)
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+
+pml_write_files(answers)</code></pre>
 </div>
 
 

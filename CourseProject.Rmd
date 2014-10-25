@@ -7,19 +7,9 @@ output:
         toc: true
 ---
 
-##Introduction
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r}
-summary(cars)
-```
-
-
 ##Background
 
-  Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+  Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
   
   
 ##Data 
@@ -35,18 +25,20 @@ summary(cars)
   The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment. 
   
   
-##What you should submit
+##Objective
   
-  The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases. 
+  The goal of this project is to predict the manner in which the exercises was done. This is the "classe" variable in the training set.  
   
-  1. Your submission should consist of a link to a Github repo with your R markdown and compiled HTML file describing your analysis. Please constrain the text of the writeup to < 2000 words and the number of figures to be less than 5. It will make it easier for the graders if you submit a repo with a gh-pages branch so the HTML page can be viewed online (and you always want to make it easy on graders :-).
-  2. You should also apply your machine learning algorithm to the 20 test cases available in the test data above. Please submit your predictions in appropriate format to the programming assignment for automated grading. See the programming assignment for additional details. 
+  This report describes how the model was built, how cross validation was used, what was the expected out of sample error and why we made the choices we did. 
   
-##Data Analysis
+  We will use this prediction model to predict 20 different test cases contained in the test dataset. 
+  
+  
+##Data Exploration
 
-  The Following code will load the training and test data from local files downloaded from the links above:
+  The Following code will load the train and test data from local files downloaded from the links above:
   
-```{r}
+```{r,cache=TRUE }
 File <- "/Users/Huascar/MachineLearning/data/pml-training.csv"
 trainData <- read.csv(File, stringsAsFactors = FALSE)
 
@@ -54,4 +46,136 @@ File2 <- "/Users/Huascar/MachineLearning/data/pml-testing.csv"
 testData <- read.csv(File2, stringsAsFactors = FALSE)
 ````
   
+  We than reviewed the data, using the `View()` command in RStudio, and read the following document that explains how experiment was conducted and the data collected:
   
+  http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf
+  
+  Our conclusions and observations about this data:
+  
+  * Each line contains measurements from the execution of the exercise _Unilateral Dumbbell Biceps Curl_ for one time.  
+  
+  * The variable `num_window` identifies all measurements for one execution of the exercise.  
+  
+  * The end of the movement, and end of this measurements window, is identified by the line where the variable `new_window` is equal to `"yes"`.  
+  
+  * This line also contains a set of features calculated from the measuremnts, such as:
+     + Maximum and Minimum
+     + Kurtosis and skewness
+     + Amplitude
+     + Average, Variance and standard deviation.  
+        
+  
+  * These calculated features appear only in the lines where the variable `new_window` is equal to `"yes"`. The other lines contain blanks or zeros or NA.  
+  
+  * The `user_name` variable in the data contains the name of the person who performed the exercise measured.
+  
+  * The data in the testing dataset do not contain such features either.  
+  
+  * Each repetition of the exercise was made in five different fashions: 
+    + Exactly according to the specification (Class A), 
+    + Throwing the elbows to the front (Class B), 
+    + Lifting the dumbbell only halfway (Class C), 
+    + Lowering the dumbbell only halfway (Class D) and 
+    + Throwing the hips to the front (Class E). 
+  
+  
+##Data transformation
+
+  From our conclusions above, we decided to perform the following transformations on the data:
+  
+  * Remove all columns with calculated features which are not contained in the test dataset.  
+  
+  * Remove all columns that, in our understanding, are irrelevant to predicting how an exercise was conducted such as: `user_name`, timestamps, `new_window`.
+  
+  The following code was used to perform these transformations on both the training and testing data: 
+  
+```{r, cache=TRUE}
+##Remove features (kurtosis, swewness, avg, max, etc) without data
+##Also remove user name, new window and timestamps columns
+removeCols <- c(1:6, 12:36, 50:59, 69:83, 87:101, 103:112, 125:139, 141:150)
+trainData <- trainData[,-removeCols]
+trainData$classe <- as.factor(trainData$classe)
+testData <- testData[,-removeCols]
+```
+  
+  
+##Prediction Models and Variables
+
+  In order to evaluate which prediction models should be used , we took a small sample (10%) of the train data and created a Random Forest model with the following code:
+  
+```{r, cache=TRUE}
+library(caret)
+set.seed(1234)
+inTrain<- createDataPartition(y=trainData$classe, 
+                              p=0.1, 
+                              list=FALSE)
+myTrain <- trainData[inTrain,]
+myTest <- trainData[-inTrain,]
+fit <- train(classe ~ ., 
+             method="rf", 
+             data = myTrain)
+fit
+confusionMatrix(predict(fit), myTrain$classe)
+```
+  
+  We seem to have hit a very good model fit using the Random Forest model! Accuracy with the train data is perfect (overfitting?).
+  
+  Let's see how this model, based on a small set of the data, performs against the rest of the data:
+  
+```{r}
+confusionMatrix(predict(fit, newdata=myTest), myTest$classe)
+```
+  
+  We have a very good 97% accurary with the rest of the train data. So we can conclude that the Random Forest is the right model to use.
+
+  Now let's explore which variables should be used, applying the `varImp` function:
+
+```{r}
+varImp(fit)
+```
+  
+  We can see that the `num_window` and `roll_belt` variables are the most important ones, so we will use only these variables to build another model. 
+  
+  
+##Final Prediction Model
+
+  A prediction model based on Random Forest and with the variables `num_window` and `roll_belt`, appears to be a good fit, since it will run faster on a larger dataset and it is also consistent with how the data was created.
+  
+  We will build this model, on a larger sample of the train data, using the following code:
+  
+```{r, cache=TRUE}
+set.seed(1234)
+inTrain<- createDataPartition(y=trainData$classe, 
+                              p=0.70, 
+                              list=FALSE)
+myTrain <- trainData[inTrain,]
+myTest <- trainData[-inTrain,]
+finalModel <- train(classe ~ num_window+roll_belt, 
+             method="rf", 
+             data = myTrain)
+finalModel
+confusionMatrix(predict(finalModel, newdata=myTest), myTest$classe)
+``` 
+
+  With the variables `num_window` and `roll_belt`, our Random Forest model presented a 100% accurary on the sample of the training data reserved for testing, which gives us a very good confidence that we will be able to accuratly predict the `classe` variable of the testing data.
+  
+##Predictions
+  
+  Let's apply our model on the test data provided, and create the files to submmit the aswers:
+  
+```{r}
+##Apply predictions
+answers <- predict(finalModel, newdata=testData)
+answers
+
+##Create submission files
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+
+pml_write_files(answers)
+```
